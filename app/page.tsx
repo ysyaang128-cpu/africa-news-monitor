@@ -17,14 +17,16 @@ export default function Home() {
   const [keyword, setKeyword] = useState("");
   const [countryFilter, setCountryFilter] = useState("");
   const [showCountries, setShowCountries] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const sourcesList = ["All", "BBC", "Africanews", "AllAfrica", "Al Jazeera"];
+  const sourcesList = ["All", "BBC", "Africanews", "AllAfrica", "Al Jazeera", "CNN"];
 
   const sourceLinks: Record<string, string> = {
     "BBC": "https://www.bbc.com/news/world/africa",
     "Africanews": "https://www.africanews.com/",
     "AllAfrica": "https://allafrica.com/",
-    "Al Jazeera": "https://www.aljazeera.com/africa/"
+    "Al Jazeera": "https://www.aljazeera.com/africa/",
+    "CNN": "https://edition.cnn.com/africa"
   };
 
   const countries = [
@@ -40,9 +42,11 @@ export default function Home() {
     "Tanzania","Togo","Tunisia","Uganda","Zambia","Zimbabwe"
   ];
 
+  // 🔥 강화된 alias (핵심 개선)
   const aliases: Record<string, string[]> = {
-    "Democratic Republic of the Congo": ["drc"],
-    "Ivory Coast": ["cote d'ivoire", "côte d'ivoire"],
+    "Democratic Republic of the Congo": ["drc", "dr congo", "congo drc", "democratic congo"],
+    "Republic of the Congo": ["congo", "congo republic"],
+    "Ivory Coast": ["cote d'ivoire", "côte d'ivoire", "ivory coast"],
     "Eswatini": ["swaziland"]
   };
 
@@ -68,11 +72,14 @@ export default function Home() {
 
   useEffect(() => {
     const fetchNews = async () => {
+      setLoading(true);
+
       const sources = [
         { url: "http://feeds.bbci.co.uk/news/world/africa/rss.xml", source: "BBC" },
         { url: "https://www.africanews.com/feed/rss", source: "Africanews" },
         { url: "https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf", source: "AllAfrica" },
-        { url: "https://www.aljazeera.com/xml/rss/all.xml", source: "Al Jazeera" }
+        { url: "https://www.aljazeera.com/xml/rss/all.xml", source: "Al Jazeera" },
+        { url: "http://rss.cnn.com/rss/edition_africa.rss", source: "CNN" } // ✅ CNN 추가
       ];
 
       let allNews: any[] = [];
@@ -93,11 +100,7 @@ export default function Home() {
               item.thumbnail ||
               item.enclosure?.link ||
               extractImage(item.description) ||
-              (s.source === "AllAfrica"
-                ? "https://images.unsplash.com/photo-1521295121783-8a321d551ad2"
-                : s.source === "Al Jazeera"
-                ? "https://images.unsplash.com/photo-1504711434969-e33886168f5c"
-                : ""),
+              "",
             summary:
               item.description
                 ?.replace(/<[^>]+>/g, "")
@@ -111,13 +114,14 @@ export default function Home() {
         }
       }
 
-      // 🌍 아프리카 필터
+      // 🌍 필터 개선 (alias 포함)
       allNews = allNews.filter((n) => {
         const text = (n.title + " " + n.summary).toLowerCase();
 
-        const hasCountry = countries.some((c) =>
-          text.includes(c.toLowerCase())
-        );
+        const hasCountry = countries.some((c) => {
+          const names = [c.toLowerCase(), ...(aliases[c] || [])];
+          return names.some((name) => text.includes(name));
+        });
 
         const hasAfricaKeyword = africaKeywords.some((k) =>
           text.includes(k)
@@ -126,7 +130,7 @@ export default function Home() {
         return hasCountry || hasAfricaKeyword;
       });
 
-      // 최근 2주
+      // ✅ 2주 필터 (명확히 유지)
       const twoWeeksAgo = new Date();
       twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
 
@@ -140,6 +144,7 @@ export default function Home() {
       );
 
       setNews(recentNews);
+      setLoading(false);
     };
 
     fetchNews();
@@ -150,9 +155,18 @@ export default function Home() {
 
     const matchSource = filter === "All" || n.source === filter;
     const matchKeyword = text.toLowerCase().includes(keyword.toLowerCase());
+
     const matchCountry =
       !countryFilter ||
-      text.toLowerCase().includes(countryFilter.toLowerCase());
+      (() => {
+        const names = [
+          countryFilter.toLowerCase(),
+          ...(aliases[countryFilter] || [])
+        ];
+        return names.some((name) =>
+          text.toLowerCase().includes(name)
+        );
+      })();
 
     return matchSource && matchKeyword && matchCountry;
   });
@@ -171,7 +185,7 @@ export default function Home() {
         className="mb-6 w-full px-4 py-2 border rounded-lg"
       />
 
-      {/* 언론사 필터 + 링크 */}
+      {/* 언론사 필터 */}
       <div className="mb-4 flex gap-2 flex-wrap">
         {sourcesList.map((s) => (
           <button
@@ -184,35 +198,7 @@ export default function Home() {
             {s}
           </button>
         ))}
-
-        <a href="https://data.k-af.or.kr/main/index" target="_blank"
-          className="px-4 py-1 bg-blue-600 text-white rounded-full text-sm">
-          Africa Insight
-        </a>
-
-        <a href="https://www.reuters.com/world/africa/" target="_blank"
-          className="px-4 py-1 bg-green-600 text-white rounded-full text-sm">
-          Reuters
-        </a>
-
-        <a href="https://www.nytimes.com/section/world/africa" target="_blank"
-          className="px-4 py-1 bg-green-600 text-white rounded-full text-sm">
-          NYT
-        </a>
       </div>
-
-      {/* 언론사 이동 버튼 */}
-      {filter !== "All" && sourceLinks[filter] && (
-        <div className="mb-4">
-          <a
-            href={sourceLinks[filter]}
-            target="_blank"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm"
-          >
-            Go to source website →
-          </a>
-        </div>
-      )}
 
       {/* 국가 토글 */}
       <button
@@ -227,7 +213,9 @@ export default function Home() {
           {countries.map((c) => (
             <button
               key={c}
-              onClick={() => setCountryFilter(c)}
+              onClick={() =>
+                setCountryFilter(prev => (prev === c ? "" : c)) // ✅ toggle 해결
+              }
               className={`text-xs px-3 py-1 rounded-full border ${
                 countryFilter === c ? "bg-blue-600 text-white" : ""
               }`}
@@ -238,51 +226,57 @@ export default function Home() {
         </div>
       )}
 
-      {/* 뉴스 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map((n, i) => (
-          <a key={i} href={n.link} target="_blank"
-            className="bg-white rounded-xl shadow-sm overflow-hidden">
+      {/* 🔥 로딩 */}
+      {loading ? (
+        <div className="text-center py-20 text-gray-500">
+          Loading news...
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map((n, i) => (
+            <a key={i} href={n.link} target="_blank"
+              className="bg-white rounded-xl shadow-sm overflow-hidden">
 
-            <div className="h-40 bg-gray-200">
-              {n.image ? (
-                <img src={n.image} className="w-full h-full object-cover" />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  No Image
+              <div className="h-40 bg-gray-200">
+                {n.image ? (
+                  <img src={n.image} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-400">
+                    No Image
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4">
+                <div className="text-xs text-gray-400 mb-1">
+                  {n.source} · {new Date(n.date).toLocaleDateString()}
                 </div>
-              )}
-            </div>
 
-            <div className="p-4">
-              <div className="text-xs text-gray-400 mb-1">
-                {n.source} · {new Date(n.date).toLocaleDateString()}
+                <div className="font-semibold">{n.title}</div>
+
+                <div className="flex gap-1 flex-wrap mt-2">
+                  {extractCountries(n.title + " " + n.summary).map((c) => (
+                    <span
+                      key={c}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCountryFilter(prev => (prev === c ? "" : c));
+                      }}
+                      className="text-xs px-2 py-1 bg-gray-200 rounded-full"
+                    >
+                      {c}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="text-sm text-gray-600 mt-2">
+                  {n.summary.slice(0, 150)}...
+                </div>
               </div>
-
-              <div className="font-semibold">{n.title}</div>
-
-              <div className="flex gap-1 flex-wrap mt-2">
-                {extractCountries(n.title + " " + n.summary).map((c) => (
-                  <span
-                    key={c}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setCountryFilter(c);
-                    }}
-                    className="text-xs px-2 py-1 bg-gray-200 rounded-full"
-                  >
-                    {c}
-                  </span>
-                ))}
-              </div>
-
-              <div className="text-sm text-gray-600 mt-2">
-                {n.summary.slice(0, 150)}...
-              </div>
-            </div>
-          </a>
-        ))}
-      </div>
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
