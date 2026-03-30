@@ -91,7 +91,11 @@ export default function Home() {
               item.thumbnail ||
               item.enclosure?.link ||
               extractImage(item.description) ||
-              "",
+              (s.source === "AllAfrica"
+                ? "https://images.unsplash.com/photo-1521295121783-8a321d551ad2"
+                : s.source === "Al Jazeera"
+                ? "https://images.unsplash.com/photo-1504711434969-e33886168f5c"
+                : ""),
             summary:
               item.description
                 ?.replace(/<[^>]+>/g, "")
