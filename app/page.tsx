@@ -21,6 +21,13 @@ export default function Home() {
 
   const sourcesList = ["All", "BBC", "Africanews", "AllAfrica", "Al Jazeera"];
 
+  const sourceLinks: Record<string, string> = {
+    "BBC": "https://www.bbc.com/news/world/africa",
+    "Africanews": "https://www.africanews.com/",
+    "AllAfrica": "https://allafrica.com/",
+    "Al Jazeera": "https://www.aljazeera.com/africa/"
+  };
+
   const countries = [
     "Algeria","Angola","Benin","Botswana","Burkina Faso","Burundi",
     "Cabo Verde","Cameroon","Central African Republic","Chad","Comoros",
@@ -34,11 +41,10 @@ export default function Home() {
     "Tanzania","Togo","Tunisia","Uganda","Zambia","Zimbabwe"
   ];
 
-  // 🔥 alias 강화
   const aliases: Record<string, string[]> = {
-    "Democratic Republic of the Congo": ["drc", "dr congo", "congo drc", "democratic congo"],
-    "Republic of the Congo": ["congo", "congo republic"],
-    "Ivory Coast": ["cote d'ivoire", "côte d'ivoire", "ivory coast"],
+    "Democratic Republic of the Congo": ["drc", "dr congo", "congo drc"],
+    "Republic of the Congo": ["congo"],
+    "Ivory Coast": ["cote d'ivoire", "côte d'ivoire"],
     "Eswatini": ["swaziland"]
   };
 
@@ -109,7 +115,7 @@ export default function Home() {
         }
       }
 
-      // 🌍 필터
+      // 아프리카 필터
       allNews = allNews.filter((n) => {
         const text = (n.title + " " + n.summary).toLowerCase();
 
@@ -125,7 +131,7 @@ export default function Home() {
         return hasCountry || hasAfricaKeyword;
       });
 
-      // 📅 2주 필터
+      // 2주 필터
       const twoWeeksAgo = new Date();
       twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
 
@@ -205,7 +211,7 @@ export default function Home() {
         </a>
 
         <a href="https://www.nytimes.com/section/world/africa" target="_blank"
-          className="px-4 py-1 bg-green-600 text-white rounded-full text-sm">
+          className="px-4 py-1 border border-black text-black rounded-full text-sm hover:bg-black hover:text-white transition">
           NYT
         </a>
 
@@ -215,7 +221,20 @@ export default function Home() {
         </a>
       </div>
 
-      {/* 국가 토글 */}
+      {/* 이동 버튼 */}
+      {filter !== "All" && sourceLinks[filter] && (
+        <div className="mb-4">
+          <a
+            href={sourceLinks[filter]}
+            target="_blank"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm"
+          >
+            Go to {filter} Africa →
+          </a>
+        </div>
+      )}
+
+      {/* 국가 */}
       <button
         onClick={() => setShowCountries(!showCountries)}
         className="mb-4 px-4 py-2 bg-gray-200 rounded-lg text-sm"
@@ -226,7 +245,6 @@ export default function Home() {
       {showCountries && (
         <div className="mb-6 flex gap-2 flex-wrap max-h-32 overflow-y-auto">
 
-          {/* All 버튼 */}
           <button
             onClick={() => setCountryFilter("")}
             className={`text-xs px-3 py-1 rounded-full border ${
@@ -250,7 +268,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* 로딩 */}
       {loading ? (
         <div className="text-center py-20 text-gray-500">
           Loading news...
