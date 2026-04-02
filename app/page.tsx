@@ -132,8 +132,10 @@ export default function Home() {
       });
 
       // 2주 필터
-      const twoWeeksAgo = new Date();
-      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+      const now = new Date();
+      const twoWeeksAgo = new Date(now);
+      twoWeeksAgo.setDate(now.getDate() - 14);
+      twoWeeksAgo.setHours(0, 0, 0, 0); // 🔥 날짜 기준으로 고정
 
       const recentNews = allNews.filter((n) => {
         const d = new Date(n.date);
@@ -211,7 +213,7 @@ export default function Home() {
         </a>
 
         <a href="https://www.nytimes.com/section/world/africa" target="_blank"
-          className="px-4 py-1 border border-black text-black rounded-full text-sm hover:bg-black hover:text-white transition">
+          className="px-4 py-1 bg-black text-white rounded-full text-sm hover:opacity-80 transition">
           NYT
         </a>
 
